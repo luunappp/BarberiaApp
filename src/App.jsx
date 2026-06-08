@@ -567,7 +567,7 @@ export default function App(){
       </div>
     </>
   );
-}cat > /mnt/user-data/outputs/App.jsx << 'ENDOFFILE'
+}
 import { useState, useEffect } from "react";
 
 // ══════════════════════════════════════════════════════════════

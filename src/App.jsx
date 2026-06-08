@@ -1,5 +1,33 @@
-import { useState, useEffect, useRef } from "react";
+cat > /mnt/user-data/outputs/App.jsx << 'ENDOFFILE'
+import { useState, useEffect } from "react";
 
+// ══════════════════════════════════════════════════════════════
+// SUPABASE CONFIG
+// ══════════════════════════════════════════════════════════════
+const SUPABASE_URL = "https://cafdkslzwvgrebqwssut.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNhZmRrc2x6d3ZncmVicXdzc3V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4ODA5MjAsImV4cCI6MjA5NjQ1NjkyMH0.mFNG6qPcFHg0mwJS0Ctx55CMgdknGKoNIR6nak5zGQU";
+
+const sb = {
+  headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` },
+  async getAll() {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/reservas?select=*`, { headers: this.headers });
+    return r.json();
+  },
+  async insert(data) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/reservas`, {
+      method: "POST", headers: { ...this.headers, "Prefer": "return=representation" },
+      body: JSON.stringify(data)
+    });
+    return r.json();
+  },
+  async delete(id) {
+    await fetch(`${SUPABASE_URL}/rest/v1/reservas?id=eq.${id}`, { method: "DELETE", headers: this.headers });
+  }
+};
+
+// ══════════════════════════════════════════════════════════════
+// CREDENCIALES
+// ══════════════════════════════════════════════════════════════
 const ADMIN_USER = "Mario Sánchez";
 const ADMIN_PASS = "Mario.CTH2026";
 
@@ -10,23 +38,29 @@ function generarCodigo() {
   return code;
 }
 
+// ══════════════════════════════════════════════════════════════
+// HORARIOS — turnos de 30 min, viernes hasta 1:30 PM
+// ══════════════════════════════════════════════════════════════
+const TARDE = ["11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30"];
+const TARDE_VIE = ["11:30","12:00","12:30","13:00","13:30"];
+
 const HORARIOS_POR_DIA = {
   0: [],
   1: ["09:00","10:50"],
-  2: ["09:00","10:50","11:40","12:00","12:20","12:40","13:00","13:20","13:40","14:00","14:20","14:40","15:00","15:20"],
-  3: ["09:00","10:50","14:20","14:40","15:00","15:20"],
-  4: ["09:00","10:50","11:20","11:40","12:00","12:20","12:40","13:00","13:20","13:40","14:00","14:20","14:40","15:00","15:20"],
-  5: ["09:00","10:50","11:20","11:40","12:00","12:20","12:40","13:00","13:20","13:40","14:00","14:20","14:40","15:00","15:20"],
+  2: ["09:00","10:50","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30"],
+  3: ["09:00","10:50","14:00","14:30","15:00","15:30"],
+  4: ["09:00","10:50","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30"],
+  5: ["09:00","10:50",...TARDE_VIE],
   6: [],
 };
 
 const HORARIOS_LABEL = {
   "09:00":"9:00 AM","10:50":"10:50 AM",
-  "11:20":"11:20 AM","11:40":"11:40 AM",
-  "12:00":"12:00 PM","12:20":"12:20 PM","12:40":"12:40 PM",
-  "13:00":"1:00 PM","13:20":"1:20 PM","13:40":"1:40 PM",
-  "14:00":"2:00 PM","14:20":"2:20 PM","14:40":"2:40 PM",
-  "15:00":"3:00 PM","15:20":"3:20 PM",
+  "11:30":"11:30 AM",
+  "12:00":"12:00 PM","12:30":"12:30 PM",
+  "13:00":"1:00 PM","13:30":"1:30 PM",
+  "14:00":"2:00 PM","14:30":"2:30 PM",
+  "15:00":"3:00 PM","15:30":"3:30 PM",
 };
 
 const SERVICIOS = [
@@ -61,22 +95,16 @@ const GLOBAL_CSS = `
   ::-webkit-scrollbar-thumb{background:#1a7a42;border-radius:4px;}
   @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
   @keyframes popIn{from{opacity:0;transform:scale(0.85)}to{opacity:1;transform:scale(1)}}
-  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
   @keyframes notifIn{0%{transform:translateX(-50%) translateY(-60px);opacity:0}12%{transform:translateX(-50%) translateY(0);opacity:1}80%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-60px)}}
   @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
   @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(245,197,24,.4)}70%{box-shadow:0 0 0 8px rgba(245,197,24,0)}}
+  @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 `;
 
 function hoyStr(){const h=new Date();return `${h.getFullYear()}-${String(h.getMonth()+1).padStart(2,"0")}-${String(h.getDate()).padStart(2,"0")}`;}
 function fechaKey(y,m,d){return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;}
-function reservaKey(fecha,hora){return `${fecha}|${hora}`;}
 function getDiaSemana(fechaStr){const[y,m,d]=fechaStr.split("-").map(Number);return new Date(y,m-1,d).getDay();}
 function formatPrecio(p){return p%1===0?`$${p}.00`:`$${p.toFixed(2)}`;}
-function limpiarPasadas(reservas){
-  const hoy=hoyStr();const limpias={};
-  for(const[k,v]of Object.entries(reservas)){const f=v.fecha?.fecha||v.fecha;if(f>=hoy)limpias[k]=v;}
-  return limpias;
-}
 
 const st={
   shell:{maxWidth:420,margin:"0 auto",minHeight:"100dvh",background:C.bg,display:"flex",flexDirection:"column",boxShadow:"0 0 80px rgba(46,204,113,.07)"},
@@ -107,17 +135,8 @@ const st={
   btnSecundario:{marginTop:12,width:"100%",padding:"13px",borderRadius:12,border:`1px solid ${C.goldD}`,background:"transparent",color:C.gold,fontSize:14,fontWeight:500},
   checkCircle:{width:72,height:72,borderRadius:"50%",background:"rgba(46,204,113,.15)",border:`2px solid ${C.green}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,color:C.green,margin:"0 auto"},
   resumenCard:{background:C.card,border:`1px solid ${C.cardB}`,borderRadius:14,padding:"14px 16px",textAlign:"left",marginBottom:8},
-  chatHeader:{display:"flex",alignItems:"center",gap:10,padding:"12px 4px 10px",borderBottom:`1px solid ${C.cardB}`,marginBottom:4},
-  citasHoyBadge:{background:"rgba(245,197,24,.15)",border:`1px solid ${C.goldD}`,borderRadius:20,padding:"4px 10px",fontSize:12,color:C.goldL,fontWeight:600},
-  quickBtn:{background:C.card,border:`1px solid #2e3e2e`,borderRadius:20,padding:"6px 12px",fontSize:12,color:C.textM,whiteSpace:"nowrap"},
-  chatMsgs:{flex:1,overflowY:"auto",padding:"8px 0",display:"flex",flexDirection:"column",minHeight:180},
-  burbuja:{maxWidth:"78%",padding:"10px 13px",borderRadius:14,fontSize:14,lineHeight:1.5},
-  burbujaBot:{background:C.card,border:`1px solid ${C.cardB}`,color:C.text,borderBottomLeftRadius:4},
-  burbujaUser:{background:"rgba(245,197,24,.18)",border:`1px solid ${C.goldD}`,color:C.goldL,borderBottomRightRadius:4},
-  chatInputRow:{display:"flex",gap:8,paddingTop:10,borderTop:`1px solid ${C.cardB}`,marginTop:4},
-  chatInput:{flex:1,background:C.card,border:`1px solid #2e3e2e`,borderRadius:22,padding:"10px 16px",color:C.text,fontSize:14,outline:"none"},
-  sendBtn:{width:42,height:42,borderRadius:"50%",background:C.gold,border:"none",color:"#0a0f0a",fontSize:16,fontWeight:700,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"},
   notifBanner:{position:"fixed",top:16,left:"50%",transform:"translateX(-50%)",background:"#0d1f0d",border:`1px solid ${C.green}`,borderRadius:24,padding:"10px 20px",color:C.green,fontSize:13,fontWeight:500,zIndex:999,whiteSpace:"nowrap",animation:"notifIn 3.5s ease forwards"},
+  spinner:{width:36,height:36,border:`3px solid ${C.cardB}`,borderTop:`3px solid ${C.gold}`,borderRadius:"50%",animation:"spin 0.8s linear infinite",margin:"40px auto"},
 };
 
 // ══════════════════════════════════════════════════════════════
@@ -147,7 +166,7 @@ function Calendario({reservas,mesV,setMesV,anioV,setAnioV,setDiaSelec,setVista})
           const pasado=fecha<hoyS;
           const diaSem=getDiaSemana(fecha);
           const cerrado=(HORARIOS_POR_DIA[diaSem]||[]).length===0;
-          const nCitas=Object.values(reservas).filter(r=>(r.fecha?.fecha||r.fecha)===fecha).length;
+          const nCitas=reservas.filter(r=>r.fecha===fecha).length;
           return(
             <button key={dia} disabled={pasado||cerrado}
               onClick={()=>{setDiaSelec({dia,fecha,label:`${dia} de ${MESES[mesV]}`,diaSem});setVista("horas");}}
@@ -169,24 +188,27 @@ function Calendario({reservas,mesV,setMesV,anioV,setAnioV,setDiaSelec,setVista})
 
 function Horarios({reservas,diaSelec,setHoraSelec,setVista}){
   const horariosDelDia=HORARIOS_POR_DIA[diaSelec?.diaSem]||[];
+  const citasDia=reservas.filter(r=>r.fecha===diaSelec?.fecha);
   return(
     <div style={{animation:"fadeUp .3s ease"}}>
       <button style={st.back} onClick={()=>setVista("cal")}>← {diaSelec?.label}</button>
       <p style={st.subTitulo}>{DIAS_NOMBRE[diaSelec?.diaSem]} · Elige una hora</p>
-      <div style={{fontSize:11,color:C.textD,marginBottom:12,background:C.cardB,borderRadius:8,padding:"6px 10px"}}>⏱ 20–25 min por corte &nbsp;·&nbsp; Cierre: 3:20 PM</div>
+      <div style={{fontSize:11,color:C.textD,marginBottom:12,background:C.cardB,borderRadius:8,padding:"6px 10px"}}>
+        ⏱ 30 min por turno &nbsp;·&nbsp; {diaSelec?.diaSem===5?"Cierre: 1:30 PM":"Cierre: 3:30 PM"}
+      </div>
       {horariosDelDia.length===0
         ?<div style={{textAlign:"center",color:C.textD,padding:30}}>Este día no hay atención 🚫</div>
         :<div style={{display:"flex",flexDirection:"column",gap:10}}>
           {horariosDelDia.map(h=>{
-            const ocup=!!reservas[reservaKey(diaSelec.fecha,h)];
-            const quien=ocup?reservas[reservaKey(diaSelec.fecha,h)]:null;
+            const cita=citasDia.find(r=>r.hora===h);
+            const ocup=!!cita;
             return(
               <button key={h} disabled={ocup}
                 onClick={()=>{setHoraSelec(h);setVista("form");}}
                 style={{...st.horaBtn,...(ocup?st.horaBtnOcup:st.horaBtnLibre)}}>
                 <span style={{fontSize:16,fontWeight:600}}>{HORARIOS_LABEL[h]}</span>
                 {ocup
-                  ?<span style={{fontSize:12,color:C.textD}}>✕ Ocupado — {quien?.nombre}</span>
+                  ?<span style={{fontSize:12,color:C.textD}}>✕ Ocupado — {cita?.nombre}</span>
                   :<span style={{fontSize:12,color:C.green}}>✓ Disponible</span>
                 }
               </button>
@@ -198,11 +220,11 @@ function Horarios({reservas,diaSelec,setHoraSelec,setVista}){
   );
 }
 
-function Formulario({diaSelec,horaSelec,setVista,onConfirmar}){
+function Formulario({diaSelec,horaSelec,setVista,onConfirmar,guardando}){
   const [srvSelec,setSrvSelec]=useState(null);
   const [nombre,  setNombre]  =useState("");
   const [seccion, setSeccion] =useState("");
-  const listo=nombre.trim()&&seccion&&srvSelec;
+  const listo=nombre.trim()&&seccion&&srvSelec&&!guardando;
   return(
     <div style={{animation:"fadeUp .3s ease"}}>
       <button style={st.back} onClick={()=>setVista("horas")}>← {HORARIOS_LABEL[horaSelec]}</button>
@@ -228,7 +250,7 @@ function Formulario({diaSelec,horaSelec,setVista,onConfirmar}){
       </div>
       <button onClick={()=>onConfirmar(nombre.trim(),seccion,SERVICIOS.find(s=>s.id===srvSelec))}
         disabled={!listo} style={{...st.btnPrimary,...(!listo?{opacity:.4,cursor:"not-allowed"}:{})}}>
-        Confirmar cita
+        {guardando?"Guardando...":"Confirmar cita"}
       </button>
     </div>
   );
@@ -249,9 +271,9 @@ function Confirmacion({ultima,onNueva}){
         {[
           {icon:"👤",label:"Nombre",val:ultima?.nombre},
           {icon:"🏷️",label:"Sección",val:`Sección ${ultima?.seccion}`},
-          {icon:"📅",label:"Fecha",val:ultima?.fecha?.label},
+          {icon:"📅",label:"Fecha",val:ultima?.fecha_label},
           {icon:"🕐",label:"Hora",val:HORARIOS_LABEL[ultima?.hora]},
-          {icon:ultima?.servicio?.icon,label:"Servicio",val:ultima?.servicio?.label},
+          {icon:ultima?.servicio_icon,label:"Servicio",val:ultima?.servicio_label},
         ].map(({icon,label,val})=>(
           <div key={label} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid ${C.cardB}`}}>
             <span style={{color:C.textM,fontSize:13}}>{icon} {label}</span>
@@ -260,7 +282,7 @@ function Confirmacion({ultima,onNueva}){
         ))}
         <div style={{display:"flex",justifyContent:"space-between",paddingTop:12,marginTop:4}}>
           <span style={{color:C.textM}}>Total</span>
-          <span style={{color:C.gold,fontWeight:700,fontSize:20}}>{formatPrecio(ultima?.servicio?.precio||0)}</span>
+          <span style={{color:C.gold,fontWeight:700,fontSize:20}}>{formatPrecio(ultima?.servicio_precio||0)}</span>
         </div>
       </div>
       <button onClick={onNueva} style={st.btnSecundario}>Reservar otra cita</button>
@@ -273,15 +295,20 @@ function Cancelacion({reservas,onCancelar}){
   const [error,     setError]     =useState("");
   const [shake,     setShake]     =useState(false);
   const [encontrada,setEncontrada]=useState(null);
+  const [cancelando,setCancelando]=useState(false);
 
   const buscar=()=>{
     const c=codigo.trim().toUpperCase();
     if(!c){setError("Ingresa tu código de cita.");return;}
-    const res=Object.entries(reservas).find(([,r])=>r.codigo===c);
+    const res=reservas.find(r=>r.codigo===c);
     if(!res){setError("Código incorrecto. Revisá bien el código que recibiste.");setShake(true);setTimeout(()=>setShake(false),500);setEncontrada(null);}
-    else{setError("");setEncontrada({key:res[0],...res[1]});}
+    else{setError("");setEncontrada(res);}
   };
-  const confirmar=()=>{onCancelar(encontrada);setEncontrada(null);setCodigo("");};
+  const confirmar=async()=>{
+    setCancelando(true);
+    await onCancelar(encontrada);
+    setEncontrada(null);setCodigo("");setCancelando(false);
+  };
 
   return(
     <div style={{animation:"fadeUp .3s ease"}}>
@@ -305,9 +332,9 @@ function Cancelacion({reservas,onCancelar}){
             {[
               {icon:"👤",label:"Nombre",val:encontrada.nombre},
               {icon:"🏷️",label:"Sección",val:`Sección ${encontrada.seccion}`},
-              {icon:"📅",label:"Fecha",val:encontrada.fecha?.label},
+              {icon:"📅",label:"Fecha",val:encontrada.fecha_label},
               {icon:"🕐",label:"Hora",val:HORARIOS_LABEL[encontrada.hora]},
-              {icon:encontrada.servicio?.icon,label:"Servicio",val:encontrada.servicio?.label},
+              {icon:encontrada.servicio_icon,label:"Servicio",val:encontrada.servicio_label},
             ].map(({icon,label,val})=>(
               <div key={label} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid ${C.cardB}`}}>
                 <span style={{color:C.textM,fontSize:13}}>{icon} {label}</span>
@@ -315,8 +342,9 @@ function Cancelacion({reservas,onCancelar}){
               </div>
             ))}
           </div>
-          <button onClick={confirmar} style={{width:"100%",padding:"14px",borderRadius:12,background:"rgba(231,76,60,.15)",border:`1px solid ${C.red}`,color:C.red,fontWeight:700,fontSize:15,marginTop:8}}>
-            🗑️ Sí, cancelar esta cita
+          <button onClick={confirmar} disabled={cancelando}
+            style={{width:"100%",padding:"14px",borderRadius:12,background:"rgba(231,76,60,.15)",border:`1px solid ${C.red}`,color:C.red,fontWeight:700,fontSize:15,marginTop:8}}>
+            {cancelando?"Cancelando...":"🗑️ Sí, cancelar esta cita"}
           </button>
           <button onClick={()=>{setEncontrada(null);setCodigo("");}} style={st.btnSecundario}>← Volver</button>
         </div>
@@ -326,8 +354,8 @@ function Cancelacion({reservas,onCancelar}){
 }
 
 function LoginAdmin({onLogin}){
-  const [user, setUser]=useState("");
-  const [pass, setPass]=useState("");
+  const [user,setUser]=useState("");
+  const [pass,setPass]=useState("");
   const [error,setError]=useState(false);
   const [shake,setShake]=useState(false);
   const intentar=()=>{
@@ -355,163 +383,77 @@ function LoginAdmin({onLogin}){
   );
 }
 
-function TarjetaCita({r,onEliminar}){
+function PanelAdmin({reservas,onLogout,onEliminar}){
+  const [panelTab,  setPanelTab]  =useState("citas");
+  const [busq,      setBusq]      =useState("");
+  const citasHoy=reservas.filter(r=>r.fecha===hoyStr()).length;
+
+  const grupos=Object.entries(
+    reservas.reduce((acc,r)=>{
+      if(!acc[r.fecha])acc[r.fecha]=[];
+      acc[r.fecha].push(r);
+      return acc;
+    },{})
+  ).sort(([a],[b])=>a.localeCompare(b));
+
+  const filtradas=busq.trim()?reservas.filter(r=>r.nombre.toLowerCase().includes(busq.toLowerCase())):null;
+
+  return(
+    <div style={{animation:"fadeUp .3s ease"}}>
+      <div style={{display:"flex",alignItems:"center",gap:10,padding:"12px 4px 10px",borderBottom:`1px solid ${C.cardB}`,marginBottom:12}}>
+        <div style={{width:42,height:42,borderRadius:"50%",overflow:"hidden",border:`1.5px solid ${C.greenD}`,flexShrink:0}}>
+          <img src="/logo.jpeg" alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>{e.target.style.display="none";}}/>
+        </div>
+        <div style={{flex:1}}>
+          <div style={{fontWeight:600,fontSize:15}}>Mario Sánchez</div>
+          <div style={{color:C.green,fontSize:11}}>● Administrador</div>
+        </div>
+        <div style={{background:"rgba(245,197,24,.15)",border:`1px solid ${C.goldD}`,borderRadius:20,padding:"4px 10px",fontSize:12,color:C.goldL,fontWeight:600}}>{citasHoy} hoy</div>
+        <button onClick={onLogout} style={{background:"rgba(231,76,60,.15)",border:`1px solid ${C.red}`,borderRadius:8,padding:"4px 10px",color:C.red,fontSize:12}}>Salir</button>
+      </div>
+
+      <div style={{display:"flex",gap:8,marginBottom:16}}>
+        <input value={busq} onChange={e=>setBusq(e.target.value)} placeholder="Buscar por nombre..."
+          style={{...st.input,marginBottom:0,flex:1,fontSize:13,padding:"10px 12px"}}/>
+        {busq&&<button onClick={()=>setBusq("")} style={{background:C.cardB,border:`1px solid #2e3e2e`,borderRadius:10,padding:"0 12px",color:C.textM,fontSize:13}}>✕</button>}
+      </div>
+
+      {busq.trim()
+        ?(filtradas?.length===0
+            ?<p style={{color:C.textD,textAlign:"center",padding:20}}>No se encontró ninguna cita.</p>
+            :filtradas?.map(r=><TarjetaAdmin key={r.id} r={r} onEliminar={()=>onEliminar(r)}/>)
+          )
+        :(grupos.length===0
+            ?<p style={{color:C.textD,textAlign:"center",padding:30}}>No hay citas agendadas.</p>
+            :grupos.map(([fecha,citas])=>(
+              <div key={fecha} style={{marginBottom:20}}>
+                <div style={{fontSize:11,color:C.gold,fontWeight:700,letterSpacing:"2px",textTransform:"uppercase",marginBottom:8,padding:"4px 0",borderBottom:`1px solid ${C.cardB}`}}>
+                  📅 {citas[0]?.fecha_label||fecha}
+                  <span style={{marginLeft:8,background:"rgba(245,197,24,.15)",borderRadius:10,padding:"1px 8px",fontSize:10}}>{citas.length} cita{citas.length!==1?"s":""}</span>
+                </div>
+                {[...citas].sort((a,b)=>a.hora.localeCompare(b.hora)).map(r=>(
+                  <TarjetaAdmin key={r.id} r={r} onEliminar={()=>onEliminar(r)}/>
+                ))}
+              </div>
+            ))
+          )
+      }
+    </div>
+  );
+}
+
+function TarjetaAdmin({r,onEliminar}){
   return(
     <div style={{...st.resumenCard,marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
       <div style={{flex:1,minWidth:0}}>
         <div style={{fontWeight:600,fontSize:14,marginBottom:2}}>{r.nombre}</div>
-        <div style={{fontSize:12,color:C.textM}}>{r.servicio?.icon} {r.servicio?.label} · Sección {r.seccion}</div>
+        <div style={{fontSize:12,color:C.textM}}>{r.servicio_icon} {r.servicio_label} · Sección {r.seccion}</div>
         <div style={{fontSize:12,color:C.textD,marginTop:2}}>🕐 {HORARIOS_LABEL[r.hora]} · 🔑 {r.codigo}</div>
       </div>
       <button onClick={onEliminar}
         style={{background:"rgba(231,76,60,.15)",border:`1px solid ${C.red}`,borderRadius:10,padding:"10px 12px",color:C.red,fontSize:18,flexShrink:0}}>
         🗑️
       </button>
-    </div>
-  );
-}
-
-function PanelBarbero({reservas,onLogout,onEliminarCita}){
-  const [panelTab,   setPanelTab]  =useState("chat");
-  const [busqNombre, setBusqNombre]=useState("");
-  const [msgs,       setMsgs]      =useState([{de:"bot",txt:"¡Hola Mario! 💈 Pregúntame quién tiene cita hoy, mañana, o a una hora específica."}]);
-  const [inputChat,  setInputChat] =useState("");
-  const [cargando,   setCargando]  =useState(false);
-  const chatRef=useRef(null);
-
-  const citasHoy=Object.values(reservas).filter(r=>(r.fecha?.fecha||r.fecha)===hoyStr()).length;
-  const totalCitas=Object.keys(reservas).length;
-
-  useEffect(()=>{chatRef.current?.scrollTo(0,chatRef.current.scrollHeight);},[msgs]);
-
-  // Agrupar por fecha
-  const grupos=Object.entries(
-    Object.entries(reservas).reduce((acc,[key,r])=>{
-      const f=r.fecha?.fecha||r.fecha;
-      if(!acc[f])acc[f]=[];
-      acc[f].push({key,...r});
-      return acc;
-    },{})
-  ).sort(([a],[b])=>a.localeCompare(b));
-
-  const filtradas=busqNombre.trim()
-    ?Object.entries(reservas).filter(([,r])=>r.nombre.toLowerCase().includes(busqNombre.toLowerCase())).map(([key,r])=>({key,...r}))
-    :null;
-
-  const enviar=async()=>{
-    const q=inputChat.trim();
-    if(!q||cargando)return;
-    setInputChat("");
-    setMsgs(m=>[...m,{de:"user",txt:q}]);
-    setCargando(true);
-    const lista=Object.values(reservas);
-    const resumen=lista.length===0?"No hay citas.":lista.map(r=>`- ${r.nombre} (${r.seccion}): ${HORARIOS_LABEL[r.hora]||r.hora} el ${r.fecha?.label||r.fecha} — ${r.servicio?.label} Código:${r.codigo}`).join("\n");
-    const hoyF=hoyStr();
-    const manD=new Date();manD.setDate(manD.getDate()+1);
-    const manF=fechaKey(manD.getFullYear(),manD.getMonth(),manD.getDate());
-    const system=`Eres el asistente de Mario Sánchez, barbero de Barber Herzl. Español, corto (máx 3 líneas). Hoy:${hoyF} Mañana:${manF}\nCitas:\n${resumen}\n"hoy"=fecha ${hoyF}, "mañana"=fecha ${manF}. Si no hay citas, dilo.`;
-    try{
-      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:300,system,messages:[{role:"user",content:q}]})});
-      const data=await res.json();
-      setMsgs(m=>[...m,{de:"bot",txt:data.content?.[0]?.text||"No pude procesar eso."}]);
-    }catch(e){setMsgs(m=>[...m,{de:"bot",txt:"Error de conexión."}]);}
-    setCargando(false);
-  };
-
-  return(
-    <div style={{display:"flex",flexDirection:"column",animation:"fadeUp .3s ease"}}>
-      {/* Header */}
-      <div style={st.chatHeader}>
-        <div style={{width:42,height:42,borderRadius:"50%",overflow:"hidden",border:`1.5px solid ${C.greenD}`,flexShrink:0}}>
-          <img src="/logo.jpeg" alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>{e.target.style.display="none";}}/>
-        </div>
-        <div style={{flex:1}}>
-          <div style={{fontWeight:600,fontSize:15}}>Mario Sánchez</div>
-          <div style={{color:C.green,fontSize:11,display:"flex",alignItems:"center",gap:4}}>
-            <span style={{width:6,height:6,borderRadius:"50%",background:C.green,display:"inline-block"}}/>
-            Administrador
-          </div>
-        </div>
-        <div style={{display:"flex",gap:8,alignItems:"center"}}>
-          <div style={st.citasHoyBadge}>{citasHoy} hoy</div>
-          <button onClick={onLogout} style={{background:"rgba(231,76,60,.15)",border:`1px solid ${C.red}`,borderRadius:8,padding:"4px 10px",color:C.red,fontSize:12}}>Salir</button>
-        </div>
-      </div>
-
-      {/* Sub-tabs */}
-      <div style={{display:"flex",borderBottom:`1px solid ${C.cardB}`,marginBottom:12}}>
-        {[{key:"chat",label:"💬 Asistente"},{key:"citas",label:`📋 Citas (${totalCitas})`}].map(t=>(
-          <button key={t.key} onClick={()=>setPanelTab(t.key)}
-            style={{flex:1,padding:"10px 0",border:"none",background:"transparent",fontSize:12,fontWeight:500,
-              color:panelTab===t.key?C.gold:C.textM,borderBottom:`2px solid ${panelTab===t.key?C.gold:"transparent"}`,transition:"all .2s"}}>
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab Citas */}
-      {panelTab==="citas"&&(
-        <div style={{animation:"fadeUp .3s ease"}}>
-          <div style={{display:"flex",gap:8,marginBottom:16}}>
-            <input value={busqNombre} onChange={e=>setBusqNombre(e.target.value)}
-              placeholder="Buscar por nombre..."
-              style={{...st.input,marginBottom:0,flex:1,fontSize:13,padding:"10px 12px"}}/>
-            {busqNombre&&<button onClick={()=>setBusqNombre("")}
-              style={{background:C.cardB,border:`1px solid #2e3e2e`,borderRadius:10,padding:"0 12px",color:C.textM,fontSize:13}}>✕</button>}
-          </div>
-          {busqNombre.trim()
-            ?(filtradas?.length===0
-                ?<p style={{color:C.textD,textAlign:"center",padding:20}}>No se encontró ninguna cita.</p>
-                :filtradas?.map(r=><TarjetaCita key={r.key} r={r} onEliminar={()=>onEliminarCita(r)}/>)
-              )
-            :(grupos.length===0
-                ?<p style={{color:C.textD,textAlign:"center",padding:30}}>No hay citas agendadas.</p>
-                :grupos.map(([fecha,citas])=>(
-                  <div key={fecha} style={{marginBottom:20}}>
-                    <div style={{fontSize:11,color:C.gold,fontWeight:700,letterSpacing:"2px",textTransform:"uppercase",marginBottom:8,padding:"4px 0",borderBottom:`1px solid ${C.cardB}`}}>
-                      📅 {citas[0]?.fecha?.label||fecha}
-                      <span style={{marginLeft:8,background:"rgba(245,197,24,.15)",borderRadius:10,padding:"1px 8px",fontSize:10}}>{citas.length} cita{citas.length!==1?"s":""}</span>
-                    </div>
-                    {[...citas].sort((a,b)=>a.hora.localeCompare(b.hora)).map(r=>(
-                      <TarjetaCita key={r.key} r={r} onEliminar={()=>onEliminarCita(r)}/>
-                    ))}
-                  </div>
-                ))
-              )
-          }
-        </div>
-      )}
-
-      {/* Tab Chat */}
-      {panelTab==="chat"&&(
-        <>
-          <div style={{display:"flex",gap:6,marginBottom:8,flexWrap:"wrap"}}>
-            {["¿Quién va hoy?","¿Citas mañana?","¿Quién a las 11:40?","¿Cuántas citas?"].map(q=>(
-              <button key={q} onClick={()=>setInputChat(q)} style={st.quickBtn}>{q}</button>
-            ))}
-          </div>
-          <div ref={chatRef} style={st.chatMsgs}>
-            {msgs.map((m,i)=>(
-              <div key={i} style={{display:"flex",justifyContent:m.de==="user"?"flex-end":"flex-start",marginBottom:10}}>
-                {m.de==="bot"&&<span style={{marginRight:6,fontSize:18,alignSelf:"flex-end"}}>💈</span>}
-                <div style={{...st.burbuja,...(m.de==="user"?st.burbujaUser:st.burbujaBot)}}>{m.txt}</div>
-              </div>
-            ))}
-            {cargando&&(
-              <div style={{display:"flex",gap:5,padding:"10px 14px",background:C.cardB,borderRadius:14,width:"fit-content"}}>
-                {[0,1,2].map(i=><span key={i} style={{width:7,height:7,borderRadius:"50%",background:C.gold,display:"inline-block",animation:`blink 1.2s ${i*0.25}s infinite`}}/>)}
-              </div>
-            )}
-          </div>
-          <div style={st.chatInputRow}>
-            <input value={inputChat} onChange={e=>setInputChat(e.target.value)}
-              onKeyDown={e=>e.key==="Enter"&&enviar()}
-              placeholder="Pregunta sobre las citas..." style={st.chatInput}/>
-            <button onClick={enviar} disabled={!inputChat.trim()||cargando}
-              style={{...st.sendBtn,...(!inputChat.trim()||cargando?{opacity:.4}:{})}}>➤</button>
-          </div>
-        </>
-      )}
     </div>
   );
 }
@@ -527,39 +469,56 @@ export default function App(){
   const [anioV,        setAnioV]        =useState(hoy.getFullYear());
   const [diaSelec,     setDiaSelec]     =useState(null);
   const [horaSelec,    setHoraSelec]    =useState(null);
-  const [reservas,     setReservas]     =useState({});
+  const [reservas,     setReservas]     =useState([]);
   const [ultima,       setUltima]       =useState(null);
   const [notif,        setNotif]        =useState(null);
   const [adminLogueado,setAdminLogueado]=useState(false);
+  const [cargando,     setCargando]     =useState(true);
+  const [guardando,    setGuardando]    =useState(false);
 
-  useEffect(()=>{
-    (async()=>{
-      try{
-        const r=await window.storage.get("herzl-reservas",true);
-        if(r){const parsed=JSON.parse(r.value);const limpias=limpiarPasadas(parsed);setReservas(limpias);await window.storage.set("herzl-reservas",JSON.stringify(limpias),true);}
-      }catch(e){}
-    })();
-  },[]);
+  const cargarReservas=async()=>{
+    try{
+      const data=await sb.getAll();
+      const hoyS=hoyStr();
+      // Borrar pasadas
+      const pasadas=(data||[]).filter(r=>r.fecha<hoyS);
+      for(const r of pasadas) await sb.delete(r.id);
+      setReservas((data||[]).filter(r=>r.fecha>=hoyS));
+    }catch(e){console.error(e);}
+    setCargando(false);
+  };
 
-  const guardar=async(nuevas)=>{setReservas(nuevas);try{await window.storage.set("herzl-reservas",JSON.stringify(nuevas),true);}catch(e){}};
+  useEffect(()=>{cargarReservas();},[]);
+
   const mostrarNotif=(txt)=>{setNotif(txt);setTimeout(()=>setNotif(null),3500);};
 
   const handleConfirmar=async(nombre,seccion,srv)=>{
-    const key=reservaKey(diaSelec.fecha,horaSelec);
+    setGuardando(true);
     const codigo=generarCodigo();
-    const nueva={nombre,seccion,servicio:srv,fecha:diaSelec,hora:horaSelec,codigo};
-    await guardar({...reservas,[key]:nueva});
-    setUltima(nueva);mostrarNotif(`✅ ¡Cita confirmada para ${nombre}!`);setVista("ok");
+    const nueva={
+      nombre, seccion, fecha:diaSelec.fecha, hora:horaSelec,
+      servicio_id:srv.id, servicio_label:srv.label,
+      servicio_precio:srv.precio, servicio_icon:srv.icon,
+      fecha_label:diaSelec.label, codigo
+    };
+    await sb.insert(nueva);
+    await cargarReservas();
+    setUltima(nueva);
+    mostrarNotif(`✅ ¡Cita confirmada para ${nombre}!`);
+    setGuardando(false);
+    setVista("ok");
   };
 
-  const handleCancelar=async(encontrada)=>{
-    const nuevas={...reservas};const n=nuevas[encontrada.key]?.nombre;
-    delete nuevas[encontrada.key];await guardar(nuevas);mostrarNotif(`🗑️ Cita de ${n} cancelada`);
+  const handleCancelar=async(r)=>{
+    await sb.delete(r.id);
+    await cargarReservas();
+    mostrarNotif(`🗑️ Cita de ${r.nombre} cancelada`);
   };
 
-  const handleEliminarAdmin=async(r)=>{
-    const nuevas={...reservas};const n=nuevas[r.key]?.nombre;
-    delete nuevas[r.key];await guardar(nuevas);mostrarNotif(`🗑️ Cita de ${n} eliminada`);
+  const handleEliminar=async(r)=>{
+    await sb.delete(r.id);
+    await cargarReservas();
+    mostrarNotif(`🗑️ Cita de ${r.nombre} eliminada`);
   };
 
   return(
@@ -588,18 +547,22 @@ export default function App(){
           ))}
         </div>
         <div style={st.body}>
-          {tab==="cliente"&&(
+          {cargando ? <div style={st.spinner}/> : (
             <>
-              {vista==="cal"   &&<Calendario reservas={reservas} mesV={mesV} setMesV={setMesV} anioV={anioV} setAnioV={setAnioV} setDiaSelec={setDiaSelec} setVista={setVista}/>}
-              {vista==="horas" &&<Horarios reservas={reservas} diaSelec={diaSelec} setHoraSelec={setHoraSelec} setVista={setVista}/>}
-              {vista==="form"  &&<Formulario diaSelec={diaSelec} horaSelec={horaSelec} setVista={setVista} onConfirmar={handleConfirmar}/>}
-              {vista==="ok"    &&<Confirmacion ultima={ultima} onNueva={()=>{setVista("cal");setDiaSelec(null);setHoraSelec(null);}}/>}
+              {tab==="cliente"&&(
+                <>
+                  {vista==="cal"   &&<Calendario reservas={reservas} mesV={mesV} setMesV={setMesV} anioV={anioV} setAnioV={setAnioV} setDiaSelec={setDiaSelec} setVista={setVista}/>}
+                  {vista==="horas" &&<Horarios reservas={reservas} diaSelec={diaSelec} setHoraSelec={setHoraSelec} setVista={setVista}/>}
+                  {vista==="form"  &&<Formulario diaSelec={diaSelec} horaSelec={horaSelec} setVista={setVista} onConfirmar={handleConfirmar} guardando={guardando}/>}
+                  {vista==="ok"    &&<Confirmacion ultima={ultima} onNueva={()=>{setVista("cal");setDiaSelec(null);setHoraSelec(null);}}/>}
+                </>
+              )}
+              {tab==="cancelar"&&<Cancelacion reservas={reservas} onCancelar={handleCancelar}/>}
+              {tab==="barbero"&&(adminLogueado
+                ?<PanelAdmin reservas={reservas} onLogout={()=>setAdminLogueado(false)} onEliminar={handleEliminar}/>
+                :<LoginAdmin onLogin={()=>setAdminLogueado(true)}/>
+              )}
             </>
-          )}
-          {tab==="cancelar"&&<Cancelacion reservas={reservas} onCancelar={handleCancelar}/>}
-          {tab==="barbero"&&(adminLogueado
-            ?<PanelBarbero reservas={reservas} onLogout={()=>setAdminLogueado(false)} onEliminarCita={handleEliminarAdmin}/>
-            :<LoginAdmin onLogin={()=>setAdminLogueado(true)}/>
           )}
         </div>
       </div>

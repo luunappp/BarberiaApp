@@ -80,6 +80,24 @@ const HORARIOS_LABEL = {
   "15:30": "3:30 PM"
 };
 
+// Días feriados / asuetos bloqueados (formato YYYY-MM-DD)
+const FERIADOS_2026 = {
+  "2026-01-01": "Año Nuevo",
+  "2026-03-29": "Semana Santa",
+  "2026-03-30": "Semana Santa",
+  "2026-03-31": "Semana Santa",
+  "2026-04-01": "Semana Santa",
+  "2026-04-02": "Jueves Santo",
+  "2026-04-03": "Viernes Santo",
+  "2026-04-04": "Sábado Santo",
+  "2026-04-05": "Semana Santa",
+  "2026-05-01": "Día del Trabajo",
+  "2026-06-22": "Día del Maestro",
+  "2026-09-15": "Día de la Independencia",
+  "2026-11-02": "Día de los Difuntos",
+  "2026-12-25": "Navidad"
+};
+
 const SERVICIOS = [
   { id: "corte", label: "Corte de pelo", precio: 2.5, icon: "✂️" },
   { id: "cejas", label: "Limpieza de cejas", precio: 1.0, icon: "🪮" },
@@ -241,7 +259,8 @@ function Calendario(props) {
           const esHoy = fecha === hoyS;
           const pasado = fecha < hoyS;
           const diaSem = getDiaSemana(fecha);
-          const cerrado = (HORARIOS_POR_DIA[diaSem] || []).length === 0;
+          const esFeriado = !!FERIADOS_2026[fecha];
+          const cerrado = (HORARIOS_POR_DIA[diaSem] || []).length === 0 || esFeriado;
           const nCitas = reservas.filter(function (r) { return r.fecha === fecha; }).length;
           const deshabilitado = pasado || cerrado;
           return (
@@ -260,7 +279,8 @@ function Calendario(props) {
               )}
             >
               <span>{dia}</span>
-              {cerrado && !pasado && <span style={{ fontSize: 7, color: C.textD }}>cerrado</span>}
+              {esFeriado && !pasado && <span style={{ fontSize: 6, color: C.red }}>asueto</span>}
+              {cerrado && !pasado && !esFeriado && <span style={{ fontSize: 7, color: C.textD }}>cerrado</span>}
               {nCitas > 0 && !pasado && !cerrado && <span style={st.dotCita} />}
             </button>
           );
@@ -728,7 +748,7 @@ export default function App() {
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
 
-  async function cargarReservas() {
+  async function cargarReservas(esInicial) {
     try {
       const data = await sb.getAll();
       const lista = data || [];
@@ -742,11 +762,15 @@ export default function App() {
     } catch (e) {
       console.error("Error cargando reservas", e);
     }
-    setCargando(false);
+    if (esInicial) setCargando(false);
   }
 
   useEffect(function () {
-    cargarReservas();
+    cargarReservas(true);
+    const intervalo = setInterval(function () {
+      cargarReservas(false);
+    }, 8000);
+    return function () { clearInterval(intervalo); };
   }, []);
 
   function mostrarNotif(txt) {
@@ -770,7 +794,7 @@ export default function App() {
       codigo: codigo
     };
     await sb.insert(nueva);
-    await cargarReservas();
+    await cargarReservas(false);
     setUltima(nueva);
     mostrarNotif("✅ ¡Cita confirmada para " + nombre + "!");
     setGuardando(false);
@@ -779,13 +803,13 @@ export default function App() {
 
   async function handleCancelar(r) {
     await sb.remove(r.id);
-    await cargarReservas();
+    await cargarReservas(false);
     mostrarNotif("🗑️ Cita de " + r.nombre + " cancelada");
   }
 
   async function handleEliminar(r) {
     await sb.remove(r.id);
-    await cargarReservas();
+    await cargarReservas(false);
     mostrarNotif("🗑️ Cita de " + r.nombre + " eliminada");
   }
 

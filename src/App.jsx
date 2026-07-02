@@ -44,17 +44,21 @@ const COMUNES = ["09:00", "10:50", "12:20", "12:40"];
 
 const HORARIOS_POR_DIA = {
   0: [],
-  1: [...COMUNES],                                          // Lunes: termina 12:40
-  2: [...COMUNES, "13:00", "13:20", "13:40"],              // Martes: hasta 1:40
-  3: [...COMUNES, "14:20", "14:40"],                       // Miércoles: pausa 1-2:20, retoma 2:20-2:40
-  4: [...COMUNES, "13:00", "13:20"],                       // Jueves: hasta 1:20
-  5: [...COMUNES, "13:00", "13:20"],                       // Viernes: hasta 1:20
+  1: [...COMUNES],                                                                        // Lunes: termina 12:40
+  2: [...COMUNES, "13:00", "13:20", "13:40"],                                            // Martes: hasta 1:40
+  3: [...COMUNES, "14:20", "14:40"],                                                     // Miércoles: pausa, retoma 2:20
+  4: ["09:00", "10:50", "11:10", "11:30", "11:50", "12:10", "12:20", "12:40", "13:00", "13:20"],  // Jueves
+  5: ["09:00", "10:50", "11:10", "11:30", "11:50", "12:10", "12:20", "12:40", "13:00", "13:20"],  // Viernes
   6: []
 };
 
 const HORARIOS_LABEL = {
   "09:00": "9:00 AM",
   "10:50": "10:50 AM",
+  "11:10": "11:10 AM",
+  "11:30": "11:30 AM",
+  "11:50": "11:50 AM",
+  "12:10": "12:10 PM",
   "12:20": "12:20 PM",
   "12:40": "12:40 PM",
   "13:00": "1:00 PM",
@@ -594,11 +598,11 @@ export default function App() {
       <div style={st.shell}>
         <div style={st.statusBar}>
           <span>{new Date().toLocaleTimeString("es-SV", { hour:"2-digit", minute:"2-digit" })}</span>
-          <span style={{ fontFamily:"'Playfair Display',serif", letterSpacing:1 }}>✦ Barber Herzl</span>
+          <span style={{ fontFamily:"'Playfair Display',serif", letterSpacing:1 }}>✦ Mari0's Barber Shop</span>
           <span>🔋</span>
         </div>
         <div style={st.header}>
-          <img src="/logo.jpeg" alt="Barber Herzl"
+          <img src="/New Logo.jpeg" alt="Mario's Barber Shop"
             style={{ width:54, height:54, borderRadius:"50%", objectFit:"cover", border:"2px solid "+C.gold, flexShrink:0 }}
             onError={function(e) { e.target.style.display="none"; }} />
           <div>

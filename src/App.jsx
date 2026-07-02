@@ -606,7 +606,7 @@ export default function App() {
             style={{ width:54, height:54, borderRadius:"50%", objectFit:"cover", border:"2px solid "+C.gold, flexShrink:0 }}
             onError={function(e) { e.target.style.display="none"; }} />
           <div>
-            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:900, color:C.gold }}>Barber Herzl</div>
+            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:900, color:C.gold }}>Mario's Barber Shop</div>
             <div style={{ fontSize:10, color:C.textD, letterSpacing:"2.5px", textTransform:"uppercase" }}>Mario Sánchez · Reservas</div>
           </div>
         </div>
